@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Web2Apk</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>:root{--ink:#111;--bg:#F2E8D5;--pap:#FFF8EA;--y:#E8B931;--c:#D96C52;--g:#86B49A;--b:#8DAFD6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:500 15px/1.5 'Space Grotesk',system-ui,sans-serif;padding:16px}
+main{max-width:780px;margin:auto;display:grid;gap:20px}
+h1{font:800 clamp(28px,7vw,44px)/1.1 'Space Grotesk',system-ui,sans-serif;margin:8px 0;background:var(--y);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:10px 16px;justify-self:start;transform:rotate(-1deg)}
+.card{background:var(--pap);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:16px}
+h2{margin:0 0 8px;font-size:19px}
+label{display:block;font-weight:700;margin:10px 0 4px;font-size:13px}
+input,select{width:100%;padding:10px;border:3px solid var(--ink);background:#fff;font:inherit;border-radius:0}
+input:focus,select:focus,button:focus-visible{outline:none;box-shadow:4px 4px 0 var(--ink)}
+button{font:inherit;font-weight:800;padding:10px 16px;border:3px solid var(--ink);background:var(--g);box-shadow:4px 4px 0 var(--ink);cursor:pointer;margin:12px 8px 0 0}
+button:active{transform:translate(4px,4px);box-shadow:none}button:disabled{opacity:.45;cursor:not-allowed}
+.y{background:var(--y)}.c{background:var(--c)}.b{background:var(--b)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:560px){.row{grid-template-columns:1fr}}
+.tag{display:inline-block;border:2px solid var(--ink);padding:2px 8px;font-weight:800;background:var(--y)}
+pre{background:var(--ink);color:#F2E8D5;padding:12px;overflow:auto;max-height:240px;white-space:pre-wrap;margin:12px 0 0}
+a{color:var(--ink);font-weight:800}.hide{display:none!important}.msg{margin-top:10px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{border:2px solid var(--ink);padding:6px;text-align:left}th{background:var(--y)}td button{margin:2px;padding:4px 8px;box-shadow:2px 2px 0 var(--ink)}
+.sc{overflow-x:auto;max-width:100%}main,#panel{grid-template-columns:minmax(0,1fr)}.card{min-width:0}td{word-break:break-word}
+</style></head>
+<body><main>
+<h1>ADMIN</h1>
+<section id="gate" class="card"><h2>Masuk</h2><p>Akun admin: <b>nugrohoadmin2012@dev.developer</b></p><label>Password admin</label><input id="ap" type="password"><button id="in" class="y">Masuk</button><div id="gm" class="msg"></div></section>
+<div id="panel" class="hide" style="display:grid;gap:20px"><div><button id="out" class="c" style="margin:0">Keluar</button></div>
+<section class="card"><h2>Daftarkan premium</h2>
+<div class="row"><div><label>Email</label><input id="em" type="email"></div><div><label>Password custom</label><input id="pw"></div>
+<div><label>Nomor telpon</label><input id="ph" type="tel"></div><div><label>Paket</label><select id="plan"></select></div></div>
+<button id="add" class="y">Daftarkan</button><div id="am" class="msg"></div></section>
+<section class="card"><h2>Daftar premium</h2><div class="sc"><table><thead><tr><th>Email</th><th>Telpon</th><th>Paket</th><th>Berakhir</th><th>Aksi</th></tr></thead><tbody id="tb"></tbody></table></div>
+<button id="rl" class="b">Muat ulang</button></section>
+<section class="card"><h2>Link template GitHub</h2>
+<label>Template FREE</label><input id="tf" placeholder="https://github.com/user/repo-free">
+<label>Template PREMIUM</label><input id="tp" placeholder="https://github.com/user/repo-premium">
+<button id="sv" class="y">Simpan link</button><div id="sm" class="msg"></div></section>
+</div></main>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+const app=initializeApp({apiKey:"AIzaSyB66pSX6CeycLm42ibclmJiDFLvIXOQ3Ok",authDomain:"webtoapk-project1.firebaseapp.com",projectId:"webtoapk-project1",storageBucket:"webtoapk-project1.firebasestorage.app",messagingSenderId:"108573284292",appId:"1:108573284292:web:de980fd329db639a92f691",measurementId:"G-F96M1C8YDP"});
+import{getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,getDocs,setDoc,deleteDoc,collection}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+const db=getFirestore(app),$=s=>document.querySelector(s),msg=(s,t)=>$(s).textContent=t;
+const auth=getAuth(app),ADMIN='nugrohoadmin2012@dev.developer';
+// days: 0 = permanen. "1/2 tahun" diasumsikan 180 hari (45K)
+const PLANS={'1 hari':[1,2000],'7 hari':[7,6000],'14 hari':[14,15000],'30 hari (1 bulan)':[30,25000],'1/2 tahun (180 hari)':[180,45000],'Permanen':[0,50000],'Admin (7 hari)':[7,75000]};
+$('#plan').innerHTML=Object.entries(PLANS).map(([k,v])=>`<option>${k} — Rp${v[1].toLocaleString('id-ID')}</option>`).join('');
+const planKey=()=>Object.keys(PLANS)[$('#plan').selectedIndex];
+const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+const er=e=>e.code==='permission-denied'?'Izin ditolak Firestore. Login sebagai: '+(auth.currentUser&&auth.currentUser.email)+'. Cek Firestore > Rules: isi firestore.rules harus sudah di-Publish.':e.message;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const until=(base,days)=>days?Math.max(base||0,Date.now())+days*864e5:null;
+
+$('#in').onclick=async()=>{try{msg('#gm','Masuk...');await signInWithEmailAndPassword(auth,ADMIN,$('#ap').value);msg('#gm','')}catch(e){msg('#gm','✘ Gagal masuk ('+e.code+')')}};
+$('#ap').onkeydown=e=>{if(e.key==='Enter')$('#in').click()};
+$('#out').onclick=()=>signOut(auth);
+onAuthStateChanged(auth,u=>{const ok=!!u&&u.email===ADMIN;if(u&&!ok)signOut(auth);$('#gate').classList.toggle('hide',ok);$('#panel').classList.toggle('hide',!ok);if(ok)load()});
+
+$('#add').onclick=async()=>{
+  try{
+    const em=$('#em').value.trim().toLowerCase(),pw=$('#pw').value,ph=$('#ph').value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(em)||pw.length<4||!ph)throw Error('Isi email valid, password (min 4), dan nomor telpon');
+    const k=planKey(),salt=crypto.randomUUID(),id=(await sha(em)).slice(0,32);
+    if((await getDoc(doc(db,'premium_users',id))).exists())throw Error('Email sudah terdaftar (gunakan perpanjang)');
+    await setDoc(doc(db,'premium_users',id),{email:em,phone:ph,plan:k,role:k.startsWith('Admin')?'admin':'premium',salt,hash:await sha(salt+pw),createdAt:Date.now(),expiresAt:until(0,PLANS[k][0])});
+    msg('#am','✔ Terdaftar: '+em);['#em','#pw','#ph'].forEach(s=>$(s).value='');load();
+  }catch(e){msg('#am','✘ '+er(e))}};
+
+async function load(){try{await load2()}catch(e){msg('#am','✘ '+er(e))}}
+async function load2(){
+  const [snap,cs]=[await getDocs(collection(db,'premium_users')),await getDoc(doc(db,'settings','config'))];
+  if(cs.exists()){$('#tf').value=cs.data().freeTemplate||'';$('#tp').value=cs.data().premiumTemplate||''}
+  $('#tb').innerHTML=snap.docs.map(d=>{const x=d.data(),ex=x.expiresAt?(x.expiresAt<Date.now()?'EXPIRED ':'')+new Date(x.expiresAt).toLocaleString('id-ID'):'Permanen';
+    return`<tr><td>${esc(x.email)}</td><td>${esc(x.phone)}</td><td>${esc(x.plan)}</td><td>${ex}</td><td><button data-x="${d.id}">+ paket terpilih</button><button class="c" data-d="${d.id}">Hapus</button></td></tr>`}).join('')||'<tr><td colspan="5">Belum ada premium.</td></tr>';
+}
+$('#rl').onclick=load;
+$('#tb').onclick=async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.d&&confirm('Hapus akun ini?'))await deleteDoc(doc(db,'premium_users',b.dataset.d));
+  if(b.dataset.x){const r=doc(db,'premium_users',b.dataset.x),x=(await getDoc(r)).data(),k=planKey();
+    if(x.expiresAt===null&&PLANS[k][0])return alert('Akun sudah permanen');
+    await setDoc(r,{plan:k,expiresAt:until(x.expiresAt,PLANS[k][0])},{merge:true})}
+  load();
+};
+$('#sv').onclick=async()=>{try{await sv()}catch(e){msg('#sm','✘ '+er(e))}};
+async function sv(){
+  const ok=u=>!u||/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(u);const f=$('#tf').value.trim(),p=$('#tp').value.trim();
+  if(!ok(f)||!ok(p))return msg('#sm','✘ Format: https://github.com/user/repo');
+  await setDoc(doc(db,'settings','config'),{freeTemplate:f,premiumTemplate:p},{merge:true});msg('#sm','✔ Tersimpan');
+}
+</script></body></html>
